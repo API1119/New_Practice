@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0ed634fb-ff95-4412-9063-8a2b5b705a96" >
+		<http:listener-connection host="0.0.0.0" port="8081" >
+		</http:listener-connection>
+	</http:listener-config>
+	<os:object-store name="test" doc:name="Object store" doc:id="52cbfaaf-d736-4f30-b9d7-1aada9a6082f" maxEntries="100" entryTtl="5" entryTtlUnit="HOURS" />
+	<os:object-store name="test2" doc:name="Object store" doc:id="3fd6533c-e183-4e61-85a3-9a0849186a11" maxEntries="100" entryTtl="5" entryTtlUnit="HOURS" />
+	<file:config name="File_Config" doc:name="File Config" doc:id="6579e95f-44e1-4f28-a6b0-75f9915e99dc" >
+		<file:connection workingDir="C:\Users\ashishchauhan\Desktop\Project" />
+	</file:config>
+	<http:listener-config name="HTTPS_Listener_config1" doc:name="HTTP Listener config" doc:id="1bcd62dd-3577-422b-82c3-621575f2908f" >
+		<http:listener-connection protocol="HTTPS" host="localhost" port="8082" >
+			<tls:context >
+				<tls:key-store path="d:/key/ash-keystore.jks" keyPassword="ashu" password="ashish" />
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<flow name="new-practiceFlow" doc:id="edb42bc8-c932-44f2-bc1b-5ada28b68df0" >
+		<http:listener doc:name="Listener" doc:id="94ce070d-ba77-4c4d-ba3c-474e802d7b4f" config-ref="HTTP_Listener_config" path="/store" allowedMethods="POST"/>
+		<os:store doc:name="Store" doc:id="727d7501-29f9-46da-a2ac-f01d4bba9590" key='#[now() as String{format:"yyyyMMddHHMMSS"}]' objectStore="test2"/>
+	</flow>
+	<flow name="new-practiceFlow1" doc:id="fc6bcd8c-fe7f-4d72-bee4-a950028682cc" >
+		<http:listener doc:name="Listener" doc:id="4dde3732-f522-4e08-a43e-43db48a40159" config-ref="HTTP_Listener_config" path="/retrieve"/>
+		<os:retrieve-all-keys doc:name="Retrieve all keys" doc:id="56990760-01f8-4eb0-9db7-8bb4aa11ca68" objectStore="test2"/>
+		<foreach doc:name="For Each" doc:id="6f7a6f53-cccb-4760-a2b9-ddaea2f4b7d0" >
+			<set-variable value="#[payload]" doc:name="Set Variable" doc:id="e3b78fee-ebe5-4005-95d9-aab9bb9504fa" variableName="vkey"/>
+			<os:retrieve doc:name="Retrieve" doc:id="700bbfdb-61a6-444b-9a55-09f6afcb06ab" key="#[vars.vkey]" objectStore="test2"/>
+			<logger level="INFO" doc:name="Logger" doc:id="6b5b8fca-3555-4ba2-9f1a-4638fcf25eff" message="#[payload]"/>
+			<os:remove doc:name="Remove" doc:id="47c6b103-b445-403d-9aaa-080b95d1728a" key="#[vars.vkey]" objectStore="test2"/>
+		</foreach>
+	</flow>
+	<flow name="new-practiceFlow2" doc:id="4dd93d36-4ac0-41e4-98f1-082fcb8a8f48" >
+		<http:listener doc:name="Listener" doc:id="2bbc57d1-6ae1-47b1-ae58-f33ccfdd0ef1" config-ref="HTTP_Listener_config" path="/hello"/>
+		<set-payload value="#[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]]" doc:name="Set Payload" doc:id="ed8e2bf2-d612-49db-b594-5ccaa9a20511" />
+		<foreach doc:name="For Each" doc:id="f7d1c78c-81e4-4cac-8058-8fcc1f61d5cb" collection="#[payload]" batchSize="5">
+			<file:write doc:name="Write" doc:id="5b2abc91-10fa-4f9f-b2d4-524a9eb33982" config-ref="File_Config" path="practice/output.txt" mode="APPEND">
+				<file:content ><![CDATA[#[output application/json --- payload]]]></file:content>
+			</file:write>
+		</foreach>
+	</flow>
+	<flow name="new-practiceFlow3" doc:id="aca46552-b392-48d3-9a1f-6ee5b02156d7" >
+		<http:listener doc:name="Listener" doc:id="76bfe022-f95d-4214-81fb-02f84da9213f" config-ref="HTTP_Listener_config" path="/hello2"/>
+		<set-variable value='"var1"' doc:name="var1" doc:id="fd334a7e-fb1e-4421-aac1-6a311b28e49c" variableName="var1"/>
+		<set-variable value='"var2"' doc:name="var2" doc:id="54720d2f-afc0-4787-b28e-71b4b4fa5d70" variableName="var2"/>
+		<foreach doc:name="For Each" doc:id="03049ac5-8512-4b06-b9bb-f93b1bddef6f" collection='#[["apple","banana","orange"]]'>
+			<choice doc:name="Choice" doc:id="064dcf27-c91d-47e1-8227-ecb7f24a5d78" >
+				<when expression='#[payload=="apple"]'>
+					<set-variable value='"newval"' doc:name="Set Variable" doc:id="20c94f34-cc34-43d3-a609-e1ebfa61c78e" variableName="var2"/>
+					<set-variable value='"appleval"' doc:name="Set Variable" doc:id="98270cc5-594b-4b48-ab06-84ebb5b6a73e" variableName="var3"/>
+				</when>
+				<when expression='#[payload=="banana"]'>
+					<set-variable value='#[vars.var3 ++ "bananval"]' doc:name="Set Variable" doc:id="c3d3ff1a-d1e7-4ebe-8bff-6698e213e1dd" variableName="var3"/>
+				</when>
+				<otherwise >
+					<set-variable value='"otherval"' doc:name="Set Variable" doc:id="f31448f7-111b-4703-82c3-eee6f9a94281" variableName="var3"/>
+					<set-variable value='"var4"' doc:name="Set Variable" doc:id="589b1247-66fc-44d0-88ed-befe7a872c42" variableName="var4"/>
+				</otherwise>
+			</choice>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="75aa7914-ce41-4eff-8f1a-f8b0bdbcf704" message="#[vars.var1]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="067bf250-7967-4e47-a62b-dcbbaf73e572" message="#[vars.var2]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="232c5ec7-6234-4e93-aed0-e21ab3462932" message="#[vars.var3]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="24f4d4d4-4279-43b9-ab0c-aa123126c149" message="#[vars.var4]"/>
+	</flow>
+	<flow name="new-practiceFlow5" doc:id="ba7463dc-d46e-4833-b7c5-c6e733865cd9" >
+		<ee:transform doc:name="Transform Message" doc:id="1137ae4d-8c82-46b8-b22a-3ee605e4f044" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList= [{
+	"id": 1,
+	"name": "ashish"
+},
+{
+	"id": 2,
+	"name": "singh"
+},
+[
+	{
+		"id": 3,
+	    "name": "chauhan"
+	},
+	{
+		"id": 4,
+	    "name": "hello"
+	}
+]]
+---
+employee: flatten(empList)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="827deab5-a9b0-4f9d-8b95-9ba23cf50cd0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var array1=[1,2,3]
+var array2=[4,5,6]
+var array3=[7,8,9]
+var mainArray=[array1,array2,array3]
+---
+out: flatten(mainArray)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="new-practiceFlow4" doc:id="11dbe635-fa7e-49e6-8817-f5cf492a5ef0" >
+		<ee:transform doc:name="Transform Message" doc:id="354bc387-eed4-4e70-acae-a3025ad8e295" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+var a = [
+  {
+    "ID": "1",
+    "NAME": ["SRAVAN","LINGAM"],
+    "DESIGNATION": "SSE"
+  },
+  {
+    "ID": "2",
+    "NAME": ["PRADEEP","B"],
+    "DESIGNATION": "CONSULTANT"
+  },
+  {
+    "ID": "3",
+    "NAME": ["SANDEEP","Y"],
+    "DESIGNATION": "SE"
+  },
+  {
+    "ID": "4",
+    "NAME": ["SAKETH","M"],
+    "DESIGNATION": "SUPPORT"
+  },
+  {
+    "ID": "5",
+    "NAME": ["SRINU","V"],
+    "DESIGNATION": "ARCH"
+  }
+]
+output application/json
+---
+a map(key,value)->{
+	"rowIndex": value,
+	"Name": key.NAME[0]	
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="new-practiceFlow7" doc:id="8fc63ee5-e7ab-4946-9a98-645e6c5b70f5" >
+		<ee:transform doc:name="Transform Message" doc:id="be39a995-3617-4773-91c9-8c4ef18f9ea7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList=[{
+	"id": 1,
+	"name": "ashish",
+	"des": "se"
+},
+{
+	"id": 2,
+	"name": "singh",
+	"des": "ase"
+},
+{
+	"id": 3,
+	"name": "chauhan",
+	"des": "se"
+},
+{
+	"id": 4,
+	"name": "hello",
+	"des": "ase"
+}]
+---
+empList[0] mapObject(empvalue,empkey,empindex)->
+{
+	(empkey): empvalue
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="new-practiceFlow6" doc:id="5cd87eb6-1f81-45da-b247-593b8e434069" >
+		<ee:transform doc:name="Transform Message" doc:id="38ea9960-d5dd-495a-bf13-465f1ea3965f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList=[{
+	"id": 1,
+	"name": "ashish",
+	"des": "se"
+},
+{
+	"id": 2,
+	"name": "singh",
+	"des": "ase"
+},
+{
+	"id": 3,
+	"name": "chauhan",
+	"des": "se"
+},
+{
+	"id": 4,
+	"name": "hello",
+	"des": "ase"
+}]
+---
+empList map(key,index)->
+{
+	"row": index,
+	"name": key.name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="new-practiceFlow8" doc:id="cb71807a-1d19-4eb4-a9fb-3df22c36c1d4" >
+		<http:listener doc:name="Listener" doc:id="53e940b8-18d2-49a0-a1a2-2de2a00f9f8c" config-ref="HTTPS_Listener_config1" path="/new"/>
+		<set-payload value='"success"' doc:name="Set Payload" doc:id="964fc61c-7cfc-4242-abe3-e82003b304ca" />
+	</flow>
+</mule>
